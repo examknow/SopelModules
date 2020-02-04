@@ -1,1 +1,20 @@
- 
+ {
+  "ProjectA": {
+    "Page1": [
+      {
+        "actName": "User1",
+        "channel": "##channel1"
+      },
+      {
+        "actName": "User2",
+        "channel": "##channel2"
+      }
+    ],
+    "Page2": [
+      {
+        "actName": "User1",
+        "channel": "##channel1"
+      }
+    ]
+  }
+}
