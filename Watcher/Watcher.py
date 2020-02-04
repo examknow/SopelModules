@@ -7,6 +7,7 @@ watcherList = json.load(open('/home/ubuntu/.sopel/modules/WatcherDB.json', encod
 
 class watcher():
     check = "off"
+    url = "https://stream.wikimedia.org/v2/stream/recentchange"
 
 def watcherRead(bot, change):
     if change['wiki'] in watcherList.keys():
@@ -76,9 +77,8 @@ def watchstart(bot, trigger):
     if watcher.check == "off":
         bot.say("Starting EventStream processing...", "##YourChannel")
         watcher.check = "on"
-        url = 'https://stream.wikimedia.org/v2/stream/recentchange'
         while watcher.check is "on":
-            for event in EventSource(url):
+            for event in EventSource(watcher.url):
                 if event.event == 'message':
                     try:
                         change = json.loads(event.data)
@@ -91,6 +91,7 @@ def watchstart(bot, trigger):
 @module.require_owner(message="This function is only available to the bot owner")
 @module.commands('watchstop')
 def watchstop(bot, trigger):
+    watcher.url = ""
     bot.say("Stopping EventStream processing...", "##YourChannel")
     watcher.check = "off"
 
