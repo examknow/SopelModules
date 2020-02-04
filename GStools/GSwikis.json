@@ -1,1 +1,10 @@
-
+{
+  "abwiki": {
+    "apiurl": "https://ab.wikipedia.org/w/api.php",
+    "csdcat": "Акатегориа:Candidates for speedy deletion"
+  },
+  "adywiki": {
+    "apiurl": "https://ady.wikipedia.org/w/api.php",
+    "csdcat": "Category:Candidates for speedy deletion"
+  }
+}
