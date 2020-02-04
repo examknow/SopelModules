@@ -1,5 +1,5 @@
 # SopelModules
-Modules I've written for the Sopel IRC bot.
+Modules I've written for the Sopel IRC bot. Provided as is and ... yeah... they probably not pretty.
 
 # Hacked
 I'm very new to writing Python and the included coding here is likely, well... bad. Please feel free to fork this repo and make corrections or make it your own. If you'd like to assist in developing some of these projects, let me know and I'll provide push authorization.
