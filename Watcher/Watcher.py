@@ -127,7 +127,7 @@ def watch(bot, trigger):
         switch = trigger.group(3)
         bot.say(watcherOn(trigger.nick, switch))
     else:
-        bot.say("I don't recognzie that command. Options are: Add, Del, On, Off.")
+        bot.say("I don't recognize that command. Options are: Add, Del, On, Off.")
 
 @module.require_chanmsg(message="This message must be used in the channel")
 @module.commands('pingon')
