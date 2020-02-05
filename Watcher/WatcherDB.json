@@ -1,20 +1,37 @@
- {
-  "ProjectA": {
-    "Page1": [
+{
+  "project1": {
+    "page1": [
       {
-        "actName": "User1",
-        "channel": "##channel1"
+        "actName": "userNick",
+        "notify": "yes",
+        "channel": "##YourChannel"
       },
       {
-        "actName": "User2",
-        "channel": "##channel2"
+        "actName": "userNick2",
+        "notify": "no",
+        "channel": "##YourOtherChannel"
       }
     ],
-    "Page2": [
+    "page2": [
       {
-        "actName": "User1",
-        "channel": "##channel1"
+        "actName": "userNick",
+        "notify": "no",
+        "channel": "##YourChannel"
       }
     ]
+  },
+  "project2": {
+    "pageA": [
+      {
+        "actName": "SomeNick",
+        "notify": "yes",
+        "channel": "##AnotherChannel"
+      }
+    ]
+  },
+  "switch": {
+    "userNick2": "on",
+    "userNick": "on",
+    "SomeNick": "off"
   }
 }
