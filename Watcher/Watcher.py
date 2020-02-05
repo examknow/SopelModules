@@ -1,4 +1,3 @@
-# This is the live version
 import json
 from sopel import module
 from sopel import tools
@@ -78,6 +77,7 @@ def watcherOn(nick, switchSet):
 
 @module.require_owner(message="This function is only available to the bot owner.")
 @module.commands('watchstart')
+@module.nickname_commands('watchstart')
 def watchstart(bot, trigger):
     if watcher.check == "off":
         bot.say("Starting EventStream processing...", "##YourChannel")
@@ -95,6 +95,7 @@ def watchstart(bot, trigger):
 
 @module.require_owner(message="This function is only available to the bot owner.")
 @module.commands('watchstop')
+@module.nickname_commands('watchstop')
 def watchstop(bot, trigger):
     bot.say("Stopping EventStream processing...", "##YourChannel")
     watcher.check = "off"
@@ -102,6 +103,7 @@ def watchstop(bot, trigger):
 @module.require_owner(message="This function currently being tested and is only available to the bot owner.")
 @module.require_chanmsg(message="This message must be used in the channel")
 @module.commands('watch')
+@module.nickname_commands('watch')
 def watch(bot, trigger):
     watchAction = trigger.group(3)  
     if watchAction == "add" or watchAction == "Add" or watchAction == "+":
@@ -131,6 +133,7 @@ def watch(bot, trigger):
 
 @module.require_chanmsg(message="This message must be used in the channel")
 @module.commands('pingon')
+@module.nickname_commands('pingon')
 def watchNotifier(bot, trigger):
     project = trigger.group(3)
     page = trigger.group(2).split(' ', 1)
@@ -148,6 +151,7 @@ def watchNotifier(bot, trigger):
 
 @module.require_chanmsg(message="This message must be used in the channel")
 @module.commands('pingoff')
+@module.nickname_commands('pingoff')
 def watcherQuiet(bot, trigger):
     project = trigger.group(3)
     page = trigger.group(2).split(' ', 1)
