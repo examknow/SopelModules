@@ -1,3 +1,4 @@
+# This is the live version
 import json
 from sopel import module
 from sopel import tools
@@ -34,6 +35,7 @@ def watcherRead(bot, change):
 
 def watcherAdd(nick, channel, wiki, page):
     newEntry = {"actName": nick, "notify": "no", "channel": channel}
+    page = page.replace('_', ' ')
     if wiki in watcherList.keys():
         if page in watcherList[wiki].keys():
             watcherList[wiki][page].append(newEntry)
@@ -48,6 +50,7 @@ def watcherAdd(nick, channel, wiki, page):
     return addResult
 
 def watcherDel(nick, channel, wiki, page):
+    page = page.replace('_', ' ')
     try:
         for item in watcherList[wiki][page]:
             if item['actName'] == nick and item['channel'] == channel:
@@ -75,9 +78,8 @@ def watcherOn(nick, switchSet):
         json.dump(watcherList, jsonFile)
     return onResponse
 
-@module.require_owner(message="This function is only available to the bot owner.")
+@module.require_owner(message="This function is only available to the bot owner")
 @module.commands('watchstart')
-@module.nickname_commands('watchstart')
 def watchstart(bot, trigger):
     if watcher.check == "off":
         bot.say("Starting EventStream processing...", "##YourChannel")
@@ -93,17 +95,14 @@ def watchstart(bot, trigger):
     else:
         bot.say("EventStream processing already running.", "##YourChannel")
 
-@module.require_owner(message="This function is only available to the bot owner.")
+@module.require_owner(message="This function is only available to the bot owner")
 @module.commands('watchstop')
-@module.nickname_commands('watchstop')
 def watchstop(bot, trigger):
     bot.say("Stopping EventStream processing...", "##YourChannel")
     watcher.check = "off"
 
-@module.require_owner(message="This function currently being tested and is only available to the bot owner.")
 @module.require_chanmsg(message="This message must be used in the channel")
 @module.commands('watch')
-@module.nickname_commands('watch')
 def watch(bot, trigger):
     watchAction = trigger.group(3)  
     if watchAction == "add" or watchAction == "Add" or watchAction == "+":
@@ -112,7 +111,6 @@ def watch(bot, trigger):
             bot.say("command seems misformed. Format: !watch add proj page")
         wiki = trigger.group(4)
         page = trigger.group(2).split(' ', 2)
-        page = page.replace("_", " ")
         bot.say(watcherAdd(trigger.nick, chan, wiki, page[2]))
     elif watchAction == "del" or watchAction == "Del" or watchAction == "-":
         chan = trigger.sender
@@ -120,7 +118,6 @@ def watch(bot, trigger):
             bot.say("command seems misformed. Format: !watch del proj page")
         wiki = trigger.group(4)
         page = trigger.group(2).split(' ', 2)
-        page = page.replace("_", " ")
         bot.say(watcherDel(trigger.nick, chan, wiki, page[2]))
     elif watchAction == "off" or watchAction == "Off":
         switch = trigger.group(3)
@@ -129,11 +126,10 @@ def watch(bot, trigger):
         switch = trigger.group(3)
         bot.say(watcherOn(trigger.nick, switch))
     else:
-        bot.say("I don't recognize that command. Options are: Add, Del, On, Off.")
+        bot.say("I don't recognzie that command. Options are: Add, Del, On, Off.")
 
 @module.require_chanmsg(message="This message must be used in the channel")
 @module.commands('pingon')
-@module.nickname_commands('pingon')
 def watchNotifier(bot, trigger):
     project = trigger.group(3)
     page = trigger.group(2).split(' ', 1)
@@ -151,7 +147,6 @@ def watchNotifier(bot, trigger):
 
 @module.require_chanmsg(message="This message must be used in the channel")
 @module.commands('pingoff')
-@module.nickname_commands('pingoff')
 def watcherQuiet(bot, trigger):
     project = trigger.group(3)
     page = trigger.group(2).split(' ', 1)
