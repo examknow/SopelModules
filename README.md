@@ -5,7 +5,7 @@ Modules I've written for the Sopel IRC bot. Provided as is and ... yeah... they 
 I'm very new to writing Python and the included coding here is likely, well... bad. Please feel free to fork this repo and make corrections or make it your own. If you'd like to assist in developing some of these projects, let me know and I'll provide push authorization.
 
 # Watcher.py
-Watcher is a EventStream processor for MediaWiki applications. It was built for Wikimedia and adapted for use with any MediaWiki install that has EventStream enabled. Refer to WatcherREADME for more information on configuration and use. This module uses a JSON library.
+Watcher is a EventStream processor for MediaWiki applications. It was built for Wikimedia and adapted for use with any MediaWiki install that has EventStream enabled. Refer to WatcherREADME for more information on configuration and use. This module uses a sqlite3 database.
 
 # GStools.py
 GStools was built to assista Global Sysops on WikiMedia patrol and combat vandalism. It provides functionality to respond on irc or on wiki along with daily status reports requested by approved users. This module uses two different JSON libraries.
