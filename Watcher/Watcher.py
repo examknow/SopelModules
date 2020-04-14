@@ -182,9 +182,9 @@ def editSend(change):
                         nicks = nick[0]
                     else:
                         nicks = nick[0] + " " + nicks
-                newReport = chan + " " + nicks + ": " + title + " on " + proj + " was edited by " + editor + " " + chDiff + " " + chComment
+                newReport = chan + " " + nicks + ": \x02" + title + "\x02 on " + proj + " was edited by \x02" + editor + "\x02 " + chDiff + " " + chComment
             else:
-                newReport = chan + " " + title + " on " + proj + " was edited by " + editor + " " + chDiff + " " + chComment
+                newReport = chan + " \x02" + title + "\x02 on " + proj + " was edited by \x02" + editor + "\x02 " + chDiff + " " + chComment
             reports.append(newReport)
 
 def dispatcher(change):
