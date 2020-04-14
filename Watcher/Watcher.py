@@ -9,12 +9,9 @@ from sopel import tools
 from sseclient import SSEClient as EventSource
 
 reports = []
+
 with open('/home/ubuntu/.sopel/modules/wikiList2.txt', 'r') as f:
     wikiList = f.read().splitlines()
-
-class watcher():
-    reports = []
-    logReports = []
 
 class wiki():
     
@@ -22,7 +19,6 @@ class wiki():
     c = db.cursor()
     data = c.execute('SELECT * from config;').fetchall()[0]
     stream, botAct, botPass, csrf, botNick = data
-    hushList = ["simplewiki", "ptwiki", "enwiki", "wikidatawiki", "metawiki", "commonswiki", "jawiki"]
     wikiList = open('/home/ubuntu/.sopel/modules/wikiList.txt', 'r')
     
     def checkTable(project):
