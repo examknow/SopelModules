@@ -50,7 +50,7 @@ def delUser(bot, trigger):
         cursor.execute(sqlite_select_query)
         records = cursor.fetchall()
         if len(records) == 0:
-            bot.say(target + ' is not registered to an account.')
+            bot.say(target + ' is not registered to a wiki account.')
             cursor.close()
             return
     except sqlite3.Error as error:
@@ -61,7 +61,7 @@ def delUser(bot, trigger):
     try:
         sqliteConnection = sqlite3.connect('/home/ubuntu/.sopel/modules/wiki.db')
         cursor = sqliteConnection.cursor()
-        sqlite_insert_query = "DELETE FROM users WHERE nickserv='" + target + "'"
+        sqlite_insert_query = "DELETE FROM globalsysops WHERE nickserv='" + target + "'"
         count = cursor.execute(sqlite_insert_query)
         sqliteConnection.commit()
         bot.say("User has been deleted")
@@ -73,7 +73,7 @@ def delUser(bot, trigger):
         if (sqliteConnection):
             sqliteConnection.close()
 
-@module.require_owner("Permission Denied")
+@module.require_admin("Permission Denied")
 @module.commands('gsinfo')
 def getUser(bot, trigger):
     args = trigger.group(2).split(" ")
@@ -85,7 +85,7 @@ def getUser(bot, trigger):
         cursor.execute(sqlite_select_query)
         records = cursor.fetchall()
         if len(records) == 0:
-            bot.say(target + ' is not registered.')
+            bot.say(target + ' is not registered to a wiki account. To do this use !gsadd <nick> <account>.')
             cursor.close()
             return
         else:
