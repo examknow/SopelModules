@@ -4,9 +4,7 @@ import sqlite3
 @module.require_admin("Permission Denied")
 @module.commands('gsadd')
 def insertUser(bot, trigger):
-    args = trigger.group(2).split(" ")
-    target = args[0]
-    account = args[1]
+    target, account = trigger.group(2).split(' ', 1)
     try:
         sqliteConnection = sqlite3.connect("/home/ubuntu/.sopel/modules/wiki.db")
         cursor = sqliteConnection.cursor()
@@ -41,8 +39,7 @@ def insertUser(bot, trigger):
 @module.require_admin("Permission Denied")
 @module.commands('gsdel')
 def delUser(bot, trigger):
-    args = trigger.group(2).split(" ")
-    target = args[0]
+    target = trigger.group(3)
     try:
         sqliteConnection = sqlite3.connect('/home/ubuntu/.sopel/modules/wiki.db')
         cursor = sqliteConnection.cursor()
@@ -76,8 +73,7 @@ def delUser(bot, trigger):
 @module.require_admin("Permission Denied")
 @module.commands('gsinfo')
 def getUser(bot, trigger):
-    args = trigger.group(2).split(" ")
-    target = args[0]
+    args = trigger.group(3)
     try:
         sqliteConnection = sqlite3.connect('/home/ubuntu/.sopel/modules/wiki.db')
         cursor = sqliteConnection.cursor()
