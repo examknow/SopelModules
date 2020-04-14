@@ -115,7 +115,11 @@ class wiki():
             return response
         except:
             return None
-
+    
+    # Need addSysop(nick, actName)
+    
+    # Need delSysop(nick, actName)
+    
 def logSend(change):
     db = sqlite3.connect("/home/ubuntu/.sopel/modules/wiki.db", check_same_thread=False)
     c = db.cursor()
