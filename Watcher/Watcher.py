@@ -102,7 +102,11 @@ class wiki():
             return response
         except:
             return None
-
+    
+    # Need addSysop(nick, actName)
+    
+    # Need delSysop(nick, actName)
+    
 def logSend(change):
     action = str(change['log_type']).upper()
     pageLink = change['meta']['uri']
