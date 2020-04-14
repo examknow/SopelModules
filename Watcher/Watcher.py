@@ -371,4 +371,4 @@ def watch(bot, trigger):
         else:
             bot.say(watcherPing(trigger.group(2), trigger.nick, trigger.sender))
     else:
-        bot.say("I don't recognzie that command. Options are: Add & Del")
+        bot.say("I don't recognize that command. Options are: Add & Del")
