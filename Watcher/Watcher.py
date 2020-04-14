@@ -3,9 +3,14 @@ import time
 import json
 import threading
 import sqlite3
+import requests
 from sopel import module
 from sopel import tools
 from sseclient import SSEClient as EventSource
+
+reports = []
+with open('/home/ubuntu/.sopel/modules/wikiList2.txt', 'r') as f:
+    wikiList = f.read().splitlines()
 
 class watcher():
     reports = []
@@ -17,12 +22,13 @@ class wiki():
     c = db.cursor()
     data = c.execute('SELECT * from config;').fetchall()[0]
     stream, botAct, botPass, csrf, botNick = data
-    hushList = ["simplewiki", "ptwiki", "enwiki", "wikidata", "metawiki"]
+    hushList = ["simplewiki", "ptwiki", "enwiki", "wikidatawiki", "metawiki", "commonswiki", "jawiki"]
+    wikiList = open('/home/ubuntu/.sopel/modules/wikiList.txt', 'r')
     
     def checkTable(project):
         # Checks for tables existence. Returns 1 for True and 0 for False and NoneType for error
         try:
-            data = wiki.c.execute('SELECT name FROM sqlite_master WHERE type="table" AND name="%s";' % project).fetchone()
+            data = wiki.c.execute('''SELECT count(*) FROM sqlite_master WHERE type="table" AND name="%s";''' % project).fetchone()
             return data
         except:
             return None
@@ -39,7 +45,7 @@ class wiki():
     def checkPage(project, title):
         # Check and see if EventStream item needs to be processed
         try:
-            check = wiki.c.execute('SELECT * from %s where page="%s";' % (project, title)).fetchone()
+            check = wiki.c.execute('''SELECT * FROM %s WHERE page="%s";''' % (project, title)).fetchone()
             return check
         except:
             return None
@@ -47,7 +53,7 @@ class wiki():
     def getPage(project, title):
         # If checkPage(project, title) returned an existing page, get the info to process
         try:
-            data = wiki.c.execute('SELECT * from %s where page="%s";' % (project, title)).fetchall()
+            data = wiki.c.execute('''SELECT * FROM %s WHERE page="%s";''' % (project, title)).fetchall()
             return data
         except:
             return None
@@ -55,14 +61,14 @@ class wiki():
     def getPageNicks(project, page, chan):
         # While processing getPage(project, title), get the specific nicks we need to notify per channel
         try:
-            data = wiki.c.execute('SELECT nick from %s where page="%s" and channel="%s" and notify="yes";' % (project, page, chan)).fetchall()
+            data = wiki.c.execute('''SELECT nick from %s where page="%s" and channel="%s" and notify="yes";''' % (project, page, chan)).fetchall()
             return data
         except:
             return None
     
     def checkNewPage(project, page, nick, channel):
         try:
-            check = wiki.c.execute('SELECT * from %s where page="%s" and nick="%s" and channel="%s";' % (project, page, nick, channel)).fetchone()
+            check = wiki.c.execute('''SELECT * from %s where page="%s" and nick="%s" and channel="%s";''' % (project, page, nick, channel)).fetchone()
             return check
         except:
             return None
@@ -81,7 +87,7 @@ class wiki():
     def setNotify(project, page, nick, channel, notify):
         # Change the notify settings of an entry
         try:
-            work = wiki.c.execute('UPDATE %s set notify="%s" where page="%s" and nick="%s" and channel="%s";' % (project, notify, page, nick, channel))
+            work = wiki.c.execute('''UPDATE %s set notify="%s" where page="%s" and nick="%s" and channel="%s";''' % (project, notify, page, nick, channel))
             wiki.db.commit()
             return True
         except:
@@ -89,74 +95,106 @@ class wiki():
     
     def deletePage(project, page, nick, channel):
         try:
-            wiki.c.execute('DELETE FROM ' + project + 'WHERE page="%s" AND channel="%s" AND nick="%s";' % (page, channel, nick))
+            work = wiki.c.execute('''DELETE FROM %s WHERE page="%s" AND channel="%s" AND nick="%s";''' % (project, page, channel, nick))
             wiki.db.commit()
             return True
+        except:
+            return None
+    
+    def listPages(project):
+        try:
+            data = wiki.c.execute('''SELECT page from %s;''' % project).fetchall()
+            return data
         except:
             return None
 
     def checkSysop(actName):
         # Check to see if a username is in the Global Sysops table. Returns 1 for yes, 0 for no, None for error
         try:
-            response = wiki.c.execute('SELECT account from globalsysops where account="%s";' % actName).fetchall()
+            response = wiki.c.execute('''SELECT account from globalsysops where account="%s";''' % actName).fetchall()
             return response
         except:
             return None
 
 def logSend(change):
-    action = str(change['log_type']).upper()
-    pageLink = change['meta']['uri']
+    db = sqlite3.connect("/home/ubuntu/.sopel/modules/wiki.db", check_same_thread=False)
+    c = db.cursor()
     editor = change['user']
-    title = change['title']
-    comment = str(change['comment']).replace('\n','')
-    report = None
-    if action == "NEWUSERS":
-        report = "Account created: " + editor + " " + pageLink
-    elif action == "BLOCK":
-        report = "Log action: " + action + " || " + editor + " blocked " + pageLink + " " + comment[:200]
-    elif action == "ABUSEFILTER":
-        report = action + " activated by " + editor + " " + pageLink
-    elif action == "MOVE":
-        report = "Log action: " + action + " || " + editor + " moved " + pageLink + " " + comment[:200]
-    elif action == "PATROL" or action == "REVIEW" or action == "THANKS" or action == "UPLOAD":
+    GSes = None
+    try:
+        GSes = c.execute('''SELECT account from globalsysops where account="%s";''' % editor).fetchall()
+    except:
         pass
-    else:
-        report = "Log action: " + action + " || " + editor + " " + pageLink + " " + comment[:200]
-    if report is not None:
-        watcher.logReports.append(report)
+    if len(GSes) > 0:
+        action = str(change['log_type']).upper()
+        pageLink = change['meta']['uri']
+        project = change['wiki']
+        space = u'\u200B'
+        editor = editor[:2] + space + editor[2:]
+        title = change['title']
+        comment = str(change['comment']).replace('\n','')
+        report = None
+        if action == "NEWUSERS":
+            pass
+            #report = "Account created: " + editor + " " + pageLink
+        elif action == "BLOCK":
+            flags = change['log_params']['flags']
+            duration = change['log_params']['duration']
+            actionType = change['log_action']
+            report = "Log action: " + action + " || " + editor + " " + actionType + "ed " + pageLink + " Flags: " + flags + " Duration: " + duration + " Comment: " + comment[:200]
+        elif action == "ABUSEFILTER":
+            report = action + " activated by " + editor + " " + pageLink
+        elif action == "MOVE":
+            report = "Log action: " + action + " || " + editor + " moved " + pageLink + " " + comment[:200]
+        elif action == "PATROL" or action == "REVIEW" or action == "THANKS" or action == "UPLOAD" or action == "ABUSEFILTER" or action == "MASSMESSAGE":
+            pass
+        else:
+            report = "Log action: " + action + " || " + editor + " " + pageLink + " " + comment[:200]
+        if report is not None:
+            channel = "##873bots"
+            report = channel + " " + report
+            reports.append(report)
 
 def editSend(change):
-    changeWiki = change['wiki']
-    if wiki.checkTable(changeWiki) is not None:
-        changeTitle = change['title']
-        chRev = str(change['revision']['new'])
-        chURL = change['server_url']
-        chDiff = chURL + "/w/index.php?diff=" + chRev
-        chComment = change['comment']
-        if wiki.checkPage(changeWiki, changeTitle):
-            data = wiki.getPage(changeWiki, changeTitle)
-            channels = []
-            for record in data:
-                if record[3] == "yes":
-                    channels.append(record[2])
-            channels = list(dict.fromkeys(channels)) # Collapse duplicate channels
-            for chan in channels:
-                nicks = ""
-                data = wiki.getPageNicks(changeWiki, changeTitle, chan)
-                for nick in data:
+    db = sqlite3.connect("/home/ubuntu/.sopel/modules/wiki.db", check_same_thread=False)
+    c = db.cursor()
+    proj = change['wiki']
+    title = str(change['title'])
+    chRev = str(change['revision']['new'])
+    chURL = change['server_url']
+    chDiff = chURL + "/w/index.php?diff=" + chRev
+    chComment = change['comment']
+    editor = change['user']
+    check = None
+    channel = "##OperTestBed"
+    try:
+        check = c.execute('''SELECT * FROM %s where page="%s";''' % (proj, title)).fetchall()
+    except:
+        pass
+    if check is not None:
+        channels = []
+        for record in check:
+            dbPage, dbNick, dbChan, notify = record
+            channels.append(dbChan)
+        channels = list(dict.fromkeys(channels)) # Collapse duplicate channels
+        for chan in channels:
+            nicks = ""
+            pgNicks = c.execute('SELECT nick from %s where page="%s" and channel="%s" and notify="on";' % (proj, title, chan)).fetchall()
+            if len(pgNicks) > 0:
+                for nick in pgNicks:
                     if nicks == "":
                         nicks = nick[0]
                     else:
                         nicks = nick[0] + " " + nicks
-                newReport = chan + " " + nicks + ": " + changeTitle + " was edited. " + chDiff + " Summary: " + chComment
-                watcher.reports.append(newReport)
+                newReport = chan + " " + nicks + ": " + title + " on " + proj + " was edited by " + editor + " " + chDiff + " " + chComment
+            else:
+                newReport = chan + " " + title + " on " + proj + " was edited by " + editor + " " + chDiff + " " + chComment
+            reports.append(newReport)
 
 def dispatcher(change):
     if change['type'] == "log":
-        if wiki.checkSysop(change['user']) and change['wiki'] not in wiki.hushList:
+        if change['wiki'] in wikiList:
             logSend(change)
-        else:
-            pass
     elif change['type'] == "edit":
         editSend(change)
     else:
@@ -188,8 +226,8 @@ def watcherAdd(msg, nick, chan):
 
 def watcherDel(msg, nick, chan):
     action, project, page = msg.split(' ', 2)
-    if wiki.checkNewPage(project, page, nick, chan) is not None:
-        if wiki.deletePage(project, page, nick, chan) is True:
+    if wiki.checkNewPage(project, page, nick, chan):
+        if wiki.deletePage(project, page, nick, chan) is not None:
             response = "%s: I won't report changes to %s on %s anymore." % (nick, page, project)
         else:
             response = "Ugh. Something blew up. Operator873 help me..."
@@ -198,12 +236,53 @@ def watcherDel(msg, nick, chan):
     return response
 
 def watcherPing(msg, nick, chan):
+    db = sqlite3.connect("/home/ubuntu/.sopel/modules/wiki.db", check_same_thread=False)
+    c = db.cursor()
     action, switch, project, page = msg.split(' ', 3)
-    if wiki.setNotify(project, page, nick, chan, switch) is not None:
-        response = nick + ": pings are now " + switch + " for " + page + " on " + project + " in this channel."
+    readChange = None
+    if switch == "on" or switch == "On" or switch == "off" or switch == "Off":
+        readChange = c.execute('''UPDATE %s set notify="%s" where page="%s" and nick="%s" and channel="%s";''' % (project, switch, page, nick, chan))
+        db.commit()
+        response = "Ping set to " + switch + " for " + page + " on " + project + " in this channel."
     else:
-        response = "Ugh. Something blew up. Operator873 help me..."
+        response = "Malformed command! Try: !watch ping {on/off} project The page you want"
     return response
+
+def updateGSwikis():
+    with open('/home/ubuntu/.sopel/modules/wikiList.txt', 'w') as repo:
+        repo.write("")
+    connect = requests.Session()
+    checkurl = 'https://meta.wikimedia.org/w/api.php'
+    myParams = {
+        'format':"json",
+        'action':"query",
+        'list':"wikisets",
+        'wsprop':"wikisincluded",
+        'wsfrom':"Opted-out of global sysop wikis"
+    }
+
+    agent = {
+        'User-Agent': 'Bot873 v0.1 using Python3.7 Sopel',
+        'From': 'operator873@873gear.com'
+    }
+    DATA = connect.get(checkurl, headers=agent, params=myParams).json()
+    wikis = DATA['query']['wikisets'][0]
+    check = wikis['wikisincluded']
+    with open('/home/ubuntu/.sopel/modules/wikiList.txt', 'w') as repo:
+        for x in check:
+            repo.write('%s\n' % check[x])
+
+def readWikiList():
+    count = len(open('/home/ubuntu/.sopel/modules/wikiList.txt', 'r').read().splitlines())
+    response = "I am monitoring " + str(count) + " wikis for GS edits."
+    return response
+        
+def checkReporter(bot):
+    if len(reports) > 0:
+        for item in reversed(reports):
+            channel, msg = item.split(' ', 1)
+            bot.say(msg, channel)
+            reports.remove(item)
 
 listen = threading.Thread(target=listener, args=(wiki.stream,))
 
@@ -213,21 +292,69 @@ def watchstart(bot, trigger):
     listen.start()
     bot.say("Listening to EventStream...", "##Operator873")
 
-@module.interval(2)
-def readlogReports(bot):
-    if len(watcher.logReports) > 0:
-        for report in watcher.logReports:
-            bot.say(report, "##873bots")
-            watcher.logReports.remove(report)
+@module.require_owner(message="This function is only available to Operator873")
+@module.commands('readGSwikis')
+def readGSwikis(bot, trigger):
+    updateGSwikis()
+    bot.say("GS wikis have been updated.")
 
-@module.interval(3)
-def readEditReports(bot):
-    if len(watcher.reports) > 0:
-        for report in watcher.reports:
-            channel, msg = report.split(' ', 1)
-            bot.say(msg, channel)
-            watcher.reports.remove(report)
+@module.require_owner(message="This function is only available to Operator873")
+@module.commands('readdbrows')
+def readdb(bot, trigger):
+    proj, page = trigger.group(2).split(' ', 1)
+    data = wiki.getPage(proj, page)
+    for item in data:
+        bot.say(str(item), trigger.sender)
 
+@module.require_owner(message="This function is only available to Operator873")
+@module.commands('readdbtables')
+def readdbtable(bot, trigger):
+    if wiki.checkTable(trigger.group(3))[0] > 0:
+        pages = wiki.listPages(trigger.group(3))
+        bot.say("I have a table called " + trigger.group(3) + ". The rows are called: " + str(pages))
+    else:
+        bot.say("I do not have a table called " + trigger.group(3))
+
+@module.require_owner(message="This function is only available to Operator873")
+@module.commands('getdbpage')
+def getdbpage(bot, trigger):
+    project, page = trigger.group(2).split(' ', 1)
+    if wiki.getPage(project, page):
+        bot.say("Yes.")
+
+@module.priority("high")
+@module.interval(5)
+def checkReports(bot):
+    checkReporter(bot)
+
+@module.interval(3600)
+def checkListener(bot):
+    if listen.is_alive() is not True:
+        listen.start()
+        bot.say("Restarted listener", "Operator873")
+    else:
+        pass
+
+@module.require_owner(message="This function is only available to Operator873")
+@module.commands('countwikis')
+def cmdreadWikilist(bot, trigger):
+    bot.say(readWikiList())
+
+@module.require_owner(message="This function is only available to Operator873")
+@module.commands('watchstatus')
+def watchStatus(bot, trigger):
+    msg = trigger.sender + " Reader is functioning."
+    if listen.is_alive() is True:
+        msg = msg + " Listener is alive."
+    reports.append(msg)
+
+@module.require_owner(message="This function is only available to Operator873")
+@module.commands('watchstop')
+def watchStop(bot, trigger):
+    listen.join()
+    reports = []
+    bot.say("Listener stopped. Reports container dumped.")
+    
 @module.require_chanmsg(message="This message must be used in the channel")
 @module.commands('watch')
 def watch(bot, trigger):
